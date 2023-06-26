@@ -98,9 +98,9 @@
 ;; A macro to create elements with s-expression syntax
 (define-syntax (sexp->react stx)
   (syntax-parse stx
-    [(_ val)
-     #:when (or (string? (syntax->datum #'val)) 
-                (number? (syntax->datum #'val)))
+    [(_ val:string)
+     #'(js-string val)]
+    [(_ val:number)
      #'(js-string val)]
     [(_ (tag-name ([propName propVal] ...) child ...))
      #'(create-element tag-name
