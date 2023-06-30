@@ -1,12 +1,15 @@
 #lang racketscript/base
 
 (require (for-syntax racket/base
+                     racket/match
                      racket/syntax
                      syntax/stx
-                     syntax/parse)
+                     syntax/parse
+                     "html-tags.rkt")
          racketscript/interop
          racket/stxparam
-         racket/list)
+         racket/list
+         racket/match)
 
 (define React ($/require/* "react"))
 (define ReactDOM ($/require/* "react-dom"))
@@ -36,7 +39,8 @@
          use-ref
          use-imperative-handle
          use-layout-effect
-         use-debug-value)
+         use-debug-value
+         sexp->react)
 
 ;; Basic hooks
 (define (use-state default-state)
@@ -89,6 +93,31 @@
 
 ;; A small alias for readability
 (define <el create-element)
+
+;; Syntax class to recognize valid HTML tags in s-expressions
+;; without using strings
+(begin-for-syntax
+  (define-syntax-class valid-tag
+    (pattern tag:id #:when (for/or ([t VALID-TAG-LIST]) (equal? t (syntax->datum #'tag)))))
+ )
+
+;; A macro to create elements with s-expression syntax
+(define-syntax (sexp->react stx)
+  (syntax-parse stx
+    [(_ val:string)
+     #'(js-string val)]
+    [(_ val:number)
+     #'(js-string val)]
+    [(_ (tag-name:valid-tag other-args ...))
+     (with-syntax ([tag-str (symbol->string (syntax->datum #'tag-name))])
+       #'(sexp->react (tag-str other-args ...)))]
+    [(_ (tag-name ([propName propVal] ...) child ...))
+     #'(create-element tag-name
+                       #:props ($/obj [propName propVal] ...)
+                       (sexp->react child) ...)]
+    [(_ (tag-name child ...))
+     #'(sexp->react (tag-name () child ...))]
+    ))
 
 ;; a macro version of <el that tries to hide some boilerplate
 (define-syntax <>
