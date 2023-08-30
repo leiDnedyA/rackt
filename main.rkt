@@ -8,8 +8,13 @@
          racket/stxparam
          racket/list)
 
-(define React ($/require/* "react"))
-(define ReactDOM ($/require/* "react-dom"))
+; (define React ($/require/* "../node_modules/react/index.js"))
+; (define ReactDOM ($/require/* "../node_modules/react-dom/index.js"))
+
+(define React #js*.window.React)
+(define ReactDOM #js*.window.ReactDOM)
+
+; (#js*.console.log React)
 
 (provide render
          <el
